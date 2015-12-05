@@ -243,7 +243,7 @@ private:
        const std::vector<Action> actions, const Board board, const Board mills,
        const Failure failure);
 
-  char cellRepr(size_t pos);
+  char cellRepr(const size_t pos) const;
 
 public:
   Game();
@@ -415,25 +415,25 @@ const std::string Game::toString() const {
   }
   res.pop_back();
   res += '\n';
-  res += cellRepr(0];
+  res += cellRepr(0);
   res += "-----";
-  res += cellRepr(1];
+  res += cellRepr(1);
   res += "-----";
-  res += cellRepr(2];
+  res += cellRepr(2);
   res += "\n| ";
-  res += cellRepr(3];
+  res += cellRepr(3);
   res += "---";
-  res += cellRepr(4];
+  res += cellRepr(4);
   res += "---";
-  res += cellRepr(5];
+  res += cellRepr(5);
   res += " |\n| | ";
-  res += cellRepr(6];
+  res += cellRepr(6);
   res += '-';
-  res += cellRepr(7];
+  res += cellRepr(7);
   res += '-';
-  res += cellRepr(8];
+  res += cellRepr(8);
   res += " | |\n";
-  res += cellRepr(9];
+  res += cellRepr(9);
   res += '-';
   res += cellRepr(10);
   res += '-';
@@ -622,7 +622,7 @@ int main() {
   return 0;
 }
 
-char Game::cellRepr(size_t pos) {
+char Game::cellRepr(const size_t pos) const {
     switch (board_[pos]) {
       case Cell::EMPTY:
         return '+';
