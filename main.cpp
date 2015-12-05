@@ -150,7 +150,7 @@ const PosArray<Peers> PEERS = {{
 }};
 
 const PosArray<Neighbors> NEIGHBORS = {{{Pos::B, Pos::J},
-                                        {Pos::A, Pos::C},
+                                        {Pos::A, Pos::C, Pos::E},
                                         {Pos::B, Pos::O},
                                         {Pos::E, Pos::K},
                                         {Pos::B, Pos::D, Pos::F, Pos::H},
@@ -402,6 +402,7 @@ const std::string Game::toString() const {
   case Stage::DROP:
   case Stage::MOVE:
   case Stage::JUMP:
+    res += std::to_string(static_cast<int>(stage_)) + "> ";
     if (failure_ == Failure::NONE) {
       res += player_ == Player::WHITES ? "Whites play" : "Blacks play";
     } else {
@@ -482,7 +483,7 @@ Failure Game::failureForAction(const Action action) const {
   } else {
     if (type == ActionType::DROP) {
       return Failure::CANNOT_DROP;
-    } else if (type == ActionType::JUMP && stage_ != Stage::MOVE) {
+    } else if (type == ActionType::JUMP && stage_ != Stage::JUMP) {
       return Failure::CANNOT_JUMP;
     }
   }
@@ -533,8 +534,8 @@ inline const std::vector<Action> Game::withEat(const Action action) const {
         withoutMills.push_back(eat);
       }
     }
-    return withoutMills.empty() ? withMills : withoutMills;
   }
+  return withoutMills.empty() ? withMills : withoutMills;
 }
 
 void Game::pushAllFor(const Action action, std::vector<Action> *dest) const {
