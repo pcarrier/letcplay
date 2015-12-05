@@ -369,6 +369,11 @@ Game Game::after(const Action action, const bool validate) const {
   }
 
   auto nextMills = Board({Cell::EMPTY});
+  for (const auto cell : nextMills) {
+    if (cell != Cell::EMPTY) {
+      std::cout << "WTF!" << std::endl;
+    }
+  }
   for (const auto line : LINES) {
     const auto a = static_cast<size_t>(line[0]),
                b = static_cast<size_t>(line[1]),
