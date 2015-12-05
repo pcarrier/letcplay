@@ -12,28 +12,22 @@ using namespace std;
 
 const uint8_t POS_COUNT = 24, PIECE_COUNT = 9;
 
-enum class Stage : uint8_t {
-  DROP, MOVE, JUMP, BLACKS_WON, WHITES_WON
-};
+enum class Stage : uint8_t { DROP, MOVE, JUMP, BLACKS_WON, WHITES_WON };
 
-enum class Cell : uint8_t {
-  EMPTY = 0, WHITES, BLACKS
-};
+enum class Cell : uint8_t { EMPTY = 0, WHITES, BLACKS };
 
 inline char cellRepr(Cell c) {
   switch (c) {
-    case Cell::EMPTY:
-      return '+';
-    case Cell::WHITES:
-      return 'W';
-    case Cell::BLACKS:
-      return 'B';
+  case Cell::EMPTY:
+    return '+';
+  case Cell::WHITES:
+    return 'W';
+  case Cell::BLACKS:
+    return 'B';
   }
 }
 
-enum class Player : uint8_t {
-  WHITES, BLACKS
-};
+enum class Player : uint8_t { WHITES, BLACKS };
 
 enum class Failure : uint8_t {
   GAME_OVER,
@@ -51,34 +45,33 @@ enum class Failure : uint8_t {
 
 const std::string messageForFailure(Failure f) {
   switch (f) {
-    case Failure::GAME_OVER:
-      return "game is already over";
-    case Failure::SHOULD_DROP:
-      return "should be a drop";
-    case Failure::CANNOT_DROP:
-      return "drop not allowed";
-    case Failure::CANNOT_JUMP:
-      return "jump not allowed";
-    case Failure::DEST_IS_TAKEN:
-      return "destination is already taken";
-    case Failure::SOURCE_IS_EMPTY:
-      return "no piece there";
-    case Failure::SOURCE_IS_OPPONENT:
-      return "not your piece";
-    case Failure::MUST_EAT:
-      return "must eat";
-    case Failure::MUST_EAT_FROM_OPPONENT:
-      return "must eat a piece from your opponent";
-    case Failure::CANNOT_EAT_FROM_MILL:
-      return "cannot eat from a mill when the opponent has pieces outside of a mill";
-    case Failure::NONE:
-      return "no failure";
+  case Failure::GAME_OVER:
+    return "game is already over";
+  case Failure::SHOULD_DROP:
+    return "should be a drop";
+  case Failure::CANNOT_DROP:
+    return "drop not allowed";
+  case Failure::CANNOT_JUMP:
+    return "jump not allowed";
+  case Failure::DEST_IS_TAKEN:
+    return "destination is already taken";
+  case Failure::SOURCE_IS_EMPTY:
+    return "no piece there";
+  case Failure::SOURCE_IS_OPPONENT:
+    return "not your piece";
+  case Failure::MUST_EAT:
+    return "must eat";
+  case Failure::MUST_EAT_FROM_OPPONENT:
+    return "must eat a piece from your opponent";
+  case Failure::CANNOT_EAT_FROM_MILL:
+    return "cannot eat from a mill when the opponent has pieces outside of a "
+           "mill";
+  case Failure::NONE:
+    return "no failure";
   }
 }
 
-enum class ActionType : uint8_t {
-  DROP, MOVE, JUMP
-};
+enum class ActionType : uint8_t { DROP, MOVE, JUMP };
 
 enum class Pos : int8_t {
   A = 0,
@@ -120,77 +113,77 @@ using Line = std::array<Pos, 3>;
 using PeersInLine = std::array<Pos, 2>;
 using Peers = std::array<PeersInLine, 2>;
 using Neighbors = std::vector<Pos>;
-template<typename E> using PosArray = std::array<E, POS_COUNT>;
+template <typename E> using PosArray = std::array<E, POS_COUNT>;
 using Board = std::array<Cell, POS_COUNT>;
 
 const PosArray<Line> LINES = {{{Pos::A, Pos::B, Pos::C},
-                                  {Pos::D, Pos::E, Pos::F},
-                                  {Pos::G, Pos::H, Pos::I},
-                                  {Pos::J, Pos::K, Pos::L},
-                                  {Pos::M, Pos::N, Pos::O},
-                                  {Pos::P, Pos::Q, Pos::R},
-                                  {Pos::S, Pos::T, Pos::U},
-                                  {Pos::V, Pos::W, Pos::X},
-                                  {Pos::A, Pos::J, Pos::V},
-                                  {Pos::D, Pos::K, Pos::S},
-                                  {Pos::G, Pos::L, Pos::P},
-                                  {Pos::B, Pos::E, Pos::H},
-                                  {Pos::Q, Pos::T, Pos::W},
-                                  {Pos::I, Pos::M, Pos::R},
-                                  {Pos::F, Pos::N, Pos::U},
-                                  {Pos::C, Pos::O, Pos::X}}};
+                               {Pos::D, Pos::E, Pos::F},
+                               {Pos::G, Pos::H, Pos::I},
+                               {Pos::J, Pos::K, Pos::L},
+                               {Pos::M, Pos::N, Pos::O},
+                               {Pos::P, Pos::Q, Pos::R},
+                               {Pos::S, Pos::T, Pos::U},
+                               {Pos::V, Pos::W, Pos::X},
+                               {Pos::A, Pos::J, Pos::V},
+                               {Pos::D, Pos::K, Pos::S},
+                               {Pos::G, Pos::L, Pos::P},
+                               {Pos::B, Pos::E, Pos::H},
+                               {Pos::Q, Pos::T, Pos::W},
+                               {Pos::I, Pos::M, Pos::R},
+                               {Pos::F, Pos::N, Pos::U},
+                               {Pos::C, Pos::O, Pos::X}}};
 
 const PosArray<Peers> PEERS = {{
-                                   {{{{Pos::B, Pos::C}}, {{Pos::J, Pos::V}}}},
-                                   {{{{Pos::A, Pos::C}}, {{Pos::E, Pos::H}}}},
-                                   {{{{Pos::A, Pos::B}}, {{Pos::O, Pos::X}}}},
-                                   {{{{Pos::E, Pos::F}}, {{Pos::K, Pos::S}}}},
-                                   {{{{Pos::D, Pos::F}}, {{Pos::B, Pos::H}}}},
-                                   {{{{Pos::D, Pos::E}}, {{Pos::N, Pos::U}}}},
-                                   {{{{Pos::H, Pos::I}}, {{Pos::L, Pos::P}}}},
-                                   {{{{Pos::G, Pos::I}}, {{Pos::B, Pos::E}}}},
-                                   {{{{Pos::G, Pos::H}}, {{Pos::M, Pos::R}}}},
-                                   {{{{Pos::K, Pos::L}}, {{Pos::A, Pos::V}}}},
-                                   {{{{Pos::J, Pos::L}}, {{Pos::D, Pos::S}}}},
-                                   {{{{Pos::J, Pos::K}}, {{Pos::G, Pos::P}}}},
-                                   {{{{Pos::N, Pos::O}}, {{Pos::I, Pos::R}}}},
-                                   {{{{Pos::M, Pos::O}}, {{Pos::F, Pos::U}}}},
-                                   {{{{Pos::M, Pos::N}}, {{Pos::C, Pos::X}}}},
-                                   {{{{Pos::Q, Pos::R}}, {{Pos::G, Pos::L}}}},
-                                   {{{{Pos::P, Pos::R}}, {{Pos::T, Pos::W}}}},
-                                   {{{{Pos::P, Pos::Q}}, {{Pos::I, Pos::M}}}},
-                                   {{{{Pos::T, Pos::U}}, {{Pos::D, Pos::K}}}},
-                                   {{{{Pos::S, Pos::U}}, {{Pos::Q, Pos::W}}}},
-                                   {{{{Pos::S, Pos::T}}, {{Pos::F, Pos::N}}}},
-                                   {{{{Pos::W, Pos::X}}, {{Pos::A, Pos::J}}}},
-                                   {{{{Pos::V, Pos::X}}, {{Pos::Q, Pos::T}}}},
-                                   {{{{Pos::V, Pos::W}}, {{Pos::C, Pos::O}}}},
-                               }};
+    {{{{Pos::B, Pos::C}}, {{Pos::J, Pos::V}}}},
+    {{{{Pos::A, Pos::C}}, {{Pos::E, Pos::H}}}},
+    {{{{Pos::A, Pos::B}}, {{Pos::O, Pos::X}}}},
+    {{{{Pos::E, Pos::F}}, {{Pos::K, Pos::S}}}},
+    {{{{Pos::D, Pos::F}}, {{Pos::B, Pos::H}}}},
+    {{{{Pos::D, Pos::E}}, {{Pos::N, Pos::U}}}},
+    {{{{Pos::H, Pos::I}}, {{Pos::L, Pos::P}}}},
+    {{{{Pos::G, Pos::I}}, {{Pos::B, Pos::E}}}},
+    {{{{Pos::G, Pos::H}}, {{Pos::M, Pos::R}}}},
+    {{{{Pos::K, Pos::L}}, {{Pos::A, Pos::V}}}},
+    {{{{Pos::J, Pos::L}}, {{Pos::D, Pos::S}}}},
+    {{{{Pos::J, Pos::K}}, {{Pos::G, Pos::P}}}},
+    {{{{Pos::N, Pos::O}}, {{Pos::I, Pos::R}}}},
+    {{{{Pos::M, Pos::O}}, {{Pos::F, Pos::U}}}},
+    {{{{Pos::M, Pos::N}}, {{Pos::C, Pos::X}}}},
+    {{{{Pos::Q, Pos::R}}, {{Pos::G, Pos::L}}}},
+    {{{{Pos::P, Pos::R}}, {{Pos::T, Pos::W}}}},
+    {{{{Pos::P, Pos::Q}}, {{Pos::I, Pos::M}}}},
+    {{{{Pos::T, Pos::U}}, {{Pos::D, Pos::K}}}},
+    {{{{Pos::S, Pos::U}}, {{Pos::Q, Pos::W}}}},
+    {{{{Pos::S, Pos::T}}, {{Pos::F, Pos::N}}}},
+    {{{{Pos::W, Pos::X}}, {{Pos::A, Pos::J}}}},
+    {{{{Pos::V, Pos::X}}, {{Pos::Q, Pos::T}}}},
+    {{{{Pos::V, Pos::W}}, {{Pos::C, Pos::O}}}},
+}};
 
 const PosArray<Neighbors> NEIGHBORS = {{{Pos::B, Pos::J},
-                                           {Pos::A, Pos::C},
-                                           {Pos::B, Pos::O},
-                                           {Pos::E, Pos::K},
-                                           {Pos::B, Pos::D, Pos::F, Pos::H},
-                                           {Pos::E, Pos::N},
-                                           {Pos::H, Pos::L},
-                                           {Pos::E, Pos::G, Pos::I},
-                                           {Pos::H, Pos::M},
-                                           {Pos::A, Pos::K, Pos::V},
-                                           {Pos::D, Pos::J, Pos::L, Pos::S},
-                                           {Pos::G, Pos::K, Pos::L},
-                                           {Pos::I, Pos::N, Pos::R},
-                                           {Pos::F, Pos::M, Pos::O, Pos::U},
-                                           {Pos::C, Pos::N, Pos::X},
-                                           {Pos::L, Pos::Q},
-                                           {Pos::P, Pos::R, Pos::T},
-                                           {Pos::M, Pos::Q},
-                                           {Pos::K, Pos::T},
-                                           {Pos::Q, Pos::S, Pos::U, Pos::W},
-                                           {Pos::N, Pos::T},
-                                           {Pos::J, Pos::W},
-                                           {Pos::T, Pos::V, Pos::X},
-                                           {Pos::O, Pos::W}}};
+                                        {Pos::A, Pos::C},
+                                        {Pos::B, Pos::O},
+                                        {Pos::E, Pos::K},
+                                        {Pos::B, Pos::D, Pos::F, Pos::H},
+                                        {Pos::E, Pos::N},
+                                        {Pos::H, Pos::L},
+                                        {Pos::E, Pos::G, Pos::I},
+                                        {Pos::H, Pos::M},
+                                        {Pos::A, Pos::K, Pos::V},
+                                        {Pos::D, Pos::J, Pos::L, Pos::S},
+                                        {Pos::G, Pos::K, Pos::L},
+                                        {Pos::I, Pos::N, Pos::R},
+                                        {Pos::F, Pos::M, Pos::O, Pos::U},
+                                        {Pos::C, Pos::N, Pos::X},
+                                        {Pos::L, Pos::Q},
+                                        {Pos::P, Pos::R, Pos::T},
+                                        {Pos::M, Pos::Q},
+                                        {Pos::K, Pos::T},
+                                        {Pos::Q, Pos::S, Pos::U, Pos::W},
+                                        {Pos::N, Pos::T},
+                                        {Pos::J, Pos::W},
+                                        {Pos::T, Pos::V, Pos::X},
+                                        {Pos::O, Pos::W}}};
 
 constexpr char posChar(Pos p) { return 'A' + static_cast<char>(p); }
 
@@ -219,7 +212,7 @@ class Action {
 public:
   Action(Pos to, Pos from, Pos eats)
       : to_(to), from_(from), eats_(eats),
-        type_(determineActionType(to, from)) { };
+        type_(determineActionType(to, from)){};
 
   const Pos from() const { return from_; }
 
@@ -255,7 +248,7 @@ private:
 
   inline const std::vector<Action> withEat(const Action action) const;
 
-  void pushAllFor(const Action action, std::vector<Action> * dest) const;
+  void pushAllFor(const Action action, std::vector<Action> *dest) const;
 
   Game(const Player player, const Stage stage,
        const std::vector<Action> actions, const Board board, const Board mills,
@@ -279,19 +272,19 @@ public:
 
 Game::Game()
     : player_(Player::WHITES), stage_(Stage::DROP), actions_({}),
-      failure_(Failure::NONE), board_({Cell::EMPTY}), mills_({Cell::EMPTY}) { }
+      failure_(Failure::NONE), board_({Cell::EMPTY}), mills_({Cell::EMPTY}) {}
 
 Game::Game(Player player, Stage stage, std::vector<Action> actions, Board board,
            Board mills, Failure failure)
     : player_(player), stage_(stage), actions_(actions), board_(board),
-      mills_(mills), failure_(failure) { }
+      mills_(mills), failure_(failure) {}
 
 Game Game::after(const Action action, const bool validate) const {
   const auto player = player_;
   const auto nextPlayer =
       player_ == Player::WHITES ? Player::BLACKS : Player::WHITES;
   const auto ourCell = cellForPlayer(player),
-      theirCell = cellForOtherPlayer(player);
+             theirCell = cellForOtherPlayer(player);
 
   auto nextBoard = Board(board_);
   auto nextFailure = failure_;
@@ -301,7 +294,7 @@ Game Game::after(const Action action, const bool validate) const {
 
   const auto from = action.from(), to = action.to(), eats = action.eats();
   const auto fromi = static_cast<size_t>(from), toi = static_cast<size_t>(to),
-      eatsi = static_cast<size_t>(eats);
+             eatsi = static_cast<size_t>(eats);
 
   auto nextStage = Stage::DROP;
 
@@ -326,30 +319,30 @@ Game Game::after(const Action action, const bool validate) const {
       for (auto pos = 0; pos < POS_COUNT; ++pos) {
         const auto cell = nextBoard[pos];
         switch (cell) {
-          case Cell::BLACKS:
-            ++blacksCount;
-            if (!blacksCanMove) {
-              const auto neighs = NEIGHBORS[pos];
-              for (const auto neigh : neighs) {
-                if (nextBoard[static_cast<size_t>(neigh)] == Cell::EMPTY) {
-                  blacksCanMove = true;
-                  break;
-                }
+        case Cell::BLACKS:
+          ++blacksCount;
+          if (!blacksCanMove) {
+            const auto neighs = NEIGHBORS[pos];
+            for (const auto neigh : neighs) {
+              if (nextBoard[static_cast<size_t>(neigh)] == Cell::EMPTY) {
+                blacksCanMove = true;
+                break;
               }
             }
-            break;
-          case Cell::WHITES:
-            ++whitesCount;
-            if (!whitesCanMove) {
-              const auto neighs = NEIGHBORS[pos];
-              for (const auto neigh : neighs) {
-                if (nextBoard[static_cast<size_t>(neigh)] == Cell::EMPTY) {
-                  whitesCanMove = true;
-                  break;
-                }
+          }
+          break;
+        case Cell::WHITES:
+          ++whitesCount;
+          if (!whitesCanMove) {
+            const auto neighs = NEIGHBORS[pos];
+            for (const auto neigh : neighs) {
+              if (nextBoard[static_cast<size_t>(neigh)] == Cell::EMPTY) {
+                whitesCanMove = true;
+                break;
               }
             }
-            break;
+          }
+          break;
         }
       }
 
@@ -378,15 +371,16 @@ Game Game::after(const Action action, const bool validate) const {
   auto nextMills = Board();
   for (const auto line : LINES) {
     const auto a = static_cast<size_t>(line[0]),
-        b = static_cast<size_t>(line[1]),
-        c = static_cast<size_t>(line[2]);
+               b = static_cast<size_t>(line[1]),
+               c = static_cast<size_t>(line[2]);
     const auto cell = nextBoard[a];
     if (nextBoard[b] == cell && nextBoard[c] == cell) {
       nextMills[a] = nextMills[b] = nextMills[c] = cell;
     }
   }
 
-  return Game(nextPlayer, nextStage, nextActions, nextBoard, nextMills, nextFailure);
+  return Game(nextPlayer, nextStage, nextActions, nextBoard, nextMills,
+              nextFailure);
 }
 
 inline bool Game::canEat(const Action action) const {
@@ -394,7 +388,7 @@ inline bool Game::canEat(const Action action) const {
   const auto peers = PEERS[static_cast<size_t>(action.to())];
   const auto from = action.from();
   const auto aa = peers[0][0], ab = peers[0][1], ba = peers[1][0],
-      bb = peers[1][1];
+             bb = peers[1][1];
   return ((aa != from && ab != from &&
            board_[static_cast<size_t>(aa)] == neededInLine &&
            board_[static_cast<size_t>(ab)] == neededInLine) ||
@@ -406,20 +400,20 @@ inline bool Game::canEat(const Action action) const {
 const std::string Game::toString() const {
   std::string res;
   switch (stage_) {
-    case Stage::WHITES_WON:
-      res += "Whites won";
-      break;
-    case Stage::BLACKS_WON:
-      res += "Blacks won";
-      break;
-    case Stage::DROP:
-    case Stage::MOVE:
-    case Stage::JUMP:
-      if (failure_ == Failure::NONE) {
-        res += player_ == Player::WHITES ? "Whites play" : "Blacks play";
-      } else {
-        res += messageForFailure(failure_);
-      }
+  case Stage::WHITES_WON:
+    res += "Whites won";
+    break;
+  case Stage::BLACKS_WON:
+    res += "Blacks won";
+    break;
+  case Stage::DROP:
+  case Stage::MOVE:
+  case Stage::JUMP:
+    if (failure_ == Failure::NONE) {
+      res += player_ == Player::WHITES ? "Whites play" : "Blacks play";
+    } else {
+      res += messageForFailure(failure_);
+    }
   }
   res += "\nActions: ";
   for (const auto action : actions_) {
@@ -482,7 +476,7 @@ Failure Game::failureForAction(const Action action) const {
   const auto type = action.type();
   const auto from = action.from(), to = action.to(), eats = action.eats();
   const auto fromi = static_cast<size_t>(from), toi = static_cast<size_t>(to),
-      eatsi = static_cast<size_t>(eats);
+             eatsi = static_cast<size_t>(eats);
   const auto opponentCell = cellForOtherPlayer(player_);
 
   if (finished())
@@ -533,8 +527,7 @@ Failure Game::failureForAction(const Action action) const {
 };
 
 inline const std::vector<Action> Game::withEat(const Action action) const {
-  auto withMills = std::vector<Action>(),
-      withoutMills = std::vector<Action>();
+  auto withMills = std::vector<Action>(), withoutMills = std::vector<Action>();
   withMills.reserve(PIECE_COUNT);
   withoutMills.reserve(PIECE_COUNT);
   const auto eatable = cellForOtherPlayer(player_);
@@ -551,7 +544,7 @@ inline const std::vector<Action> Game::withEat(const Action action) const {
   }
 }
 
-void Game::pushAllFor(const Action action, std::vector<Action> * dest) const {
+void Game::pushAllFor(const Action action, std::vector<Action> *dest) const {
   if (canEat(action)) {
     const auto actions = withEat(action);
     dest->reserve(dest->size() + actions.size());
@@ -568,53 +561,53 @@ std::vector<Action> Game::possibleActions() const {
   const auto ours = cellForPlayer(player_);
 
   switch (stage_) {
-    case Stage::BLACKS_WON:
-    case Stage::WHITES_WON:
-      break;
-    case Stage::DROP:
-      for (auto pos = 0; pos < POS_COUNT; ++pos) {
-        if (board_[pos] == Cell::EMPTY) {
-          pushAllFor(Action(static_cast<Pos>(pos), Pos::NONE, Pos::NONE), &res);
-        }
+  case Stage::BLACKS_WON:
+  case Stage::WHITES_WON:
+    break;
+  case Stage::DROP:
+    for (auto pos = 0; pos < POS_COUNT; ++pos) {
+      if (board_[pos] == Cell::EMPTY) {
+        pushAllFor(Action(static_cast<Pos>(pos), Pos::NONE, Pos::NONE), &res);
       }
-      break;
-    case Stage::MOVE:
-      for (auto from = 0; from < POS_COUNT; ++from) {
-        if (board_[from] == ours) {
-          const auto neighbors = NEIGHBORS[from];
-          for (const auto to : neighbors) {
-            if (board_[static_cast<size_t>(to)] == Cell::EMPTY) {
-              pushAllFor(Action(to, static_cast<Pos>(from), Pos::NONE), &res);
-            }
+    }
+    break;
+  case Stage::MOVE:
+    for (auto from = 0; from < POS_COUNT; ++from) {
+      if (board_[from] == ours) {
+        const auto neighbors = NEIGHBORS[from];
+        for (const auto to : neighbors) {
+          if (board_[static_cast<size_t>(to)] == Cell::EMPTY) {
+            pushAllFor(Action(to, static_cast<Pos>(from), Pos::NONE), &res);
           }
         }
       }
-      break;
-    case Stage::JUMP:
-      for (auto from = 0; from < POS_COUNT; ++from) {
-        if (board_[from] == ours) {
-          for (auto to = 0; to < POS_COUNT; ++to) {
-            if (board_[to] == Cell::EMPTY) {
-              pushAllFor(
-                  Action(static_cast<Pos>(to), static_cast<Pos>(from), Pos::NONE),
-                  &res);
-            }
+    }
+    break;
+  case Stage::JUMP:
+    for (auto from = 0; from < POS_COUNT; ++from) {
+      if (board_[from] == ours) {
+        for (auto to = 0; to < POS_COUNT; ++to) {
+          if (board_[to] == Cell::EMPTY) {
+            pushAllFor(
+                Action(static_cast<Pos>(to), static_cast<Pos>(from), Pos::NONE),
+                &res);
           }
         }
       }
-      break;
+    }
+    break;
   }
   return res;
 }
 
 void Game::finishRandomly(bool log) const {
-  const Game * game = new Game(*this);
+  const Game *game = new Game(*this);
   if (log)
     std::cout << game->toString() << std::endl;
   while (!game->finished()) {
     const auto actions = game->possibleActions();
     const Action action = actions[rand() % actions.size()];
-    const Game * tmp = game;
+    const Game *tmp = game;
     game = new Game(game->after(action, false));
     if (tmp != this)
       delete tmp;
