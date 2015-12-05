@@ -5,6 +5,7 @@
 #include <memory>
 #include <random>
 #include <string>
+#include <time.h>
 #include <vector>
 
 using namespace std;
@@ -69,8 +70,7 @@ const std::string messageForFailure(Failure f) {
     case Failure::MUST_EAT_FROM_OPPONENT:
       return "must eat a piece from your opponent";
     case Failure::CANNOT_EAT_FROM_MILL:
-      return "cannot eat from a mill when the opponent has pieces outside of a "
-          "mill";
+      return "cannot eat from a mill when the opponent has pieces outside of a mill";
     case Failure::NONE:
       return "no failure";
   }
@@ -238,6 +238,7 @@ public:
     if (eats_ != Pos::NONE) {
       res += posChar(eats_);
     }
+    return res;
   }
 };
 
@@ -296,6 +297,7 @@ Game Game::after(const Action action, const bool validate) const {
   auto nextFailure = failure_;
 
   auto nextActions = std::vector<Action>(actions_);
+  nextActions.push_back(action);
 
   const auto from = action.from(), to = action.to(), eats = action.eats();
   const auto fromi = static_cast<size_t>(from), toi = static_cast<size_t>(to),
@@ -303,7 +305,7 @@ Game Game::after(const Action action, const bool validate) const {
 
   auto nextStage = Stage::DROP;
 
-  if (nextFailure == Failure::NONE) {
+  if (nextFailure == Failure::NONE && validate) {
     nextFailure = failureForAction(action);
   }
 
@@ -315,7 +317,6 @@ Game Game::after(const Action action, const bool validate) const {
     if (eats != Pos::NONE) {
       nextBoard[eatsi] = Cell::EMPTY;
     }
-    nextActions.push_back(action);
 
     if (nextActions.size() > PIECE_COUNT * 2) {
       // We're not dropping anymore
@@ -532,21 +533,21 @@ Failure Game::failureForAction(const Action action) const {
 };
 
 inline const std::vector<Action> Game::withEat(const Action action) const {
-  auto ifOnlyMills = std::vector<Action>(),
-      ifNotOnlyMills = std::vector<Action>();
-  ifOnlyMills.reserve(PIECE_COUNT);
-  ifNotOnlyMills.reserve(PIECE_COUNT);
+  auto withMills = std::vector<Action>(),
+      withoutMills = std::vector<Action>();
+  withMills.reserve(PIECE_COUNT);
+  withoutMills.reserve(PIECE_COUNT);
   const auto eatable = cellForOtherPlayer(player_);
   for (auto pos = 0; pos < POS_COUNT; ++pos) {
     if (board_[pos] == eatable) {
       const auto eat =
           Action(action.to(), action.from(), static_cast<Pos>(pos));
-      ifOnlyMills.push_back(eat);
+      withMills.push_back(eat);
       if (mills_[pos] == Cell::EMPTY) {
-        ifNotOnlyMills.push_back(eat);
+        withoutMills.push_back(eat);
       }
     }
-    return ifNotOnlyMills.empty() ? ifOnlyMills : ifNotOnlyMills;
+    return withoutMills.empty() ? withMills : withoutMills;
   }
 }
 
@@ -607,14 +608,15 @@ std::vector<Action> Game::possibleActions() const {
 }
 
 void Game::finishRandomly(bool log) const {
-  auto game = std::unique_ptr<Game>(new Game(*this));
+  const Game * game = new Game(*this);
   if (log)
     std::cout << game->toString() << std::endl;
   while (!game->finished()) {
     const auto actions = game->possibleActions();
     const Action action = actions[rand() % actions.size()];
-    std::cout << actions.size() << std::endl;
-    game.reset(new Game(game->after(action, false)));
+    const Game * tmp = game;
+    game = new Game(game->after(action, false));
+    delete tmp;
     if (log)
       std::cout << game->toString() << std::endl;
   }
@@ -625,8 +627,9 @@ bool Game::finished() const {
 }
 
 int main() {
+  srand(time(NULL));
   for (auto i = 0; i < 1000; ++i) {
-    Game().finishRandomly(true);
+    Game().finishRandomly(false);
   }
   return 0;
 }
