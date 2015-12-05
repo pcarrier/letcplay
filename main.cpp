@@ -16,17 +16,6 @@ enum class Stage : uint8_t { DROP, MOVE, JUMP, BLACKS_WON, WHITES_WON };
 
 enum class Cell : uint8_t { EMPTY = 0, WHITES, BLACKS };
 
-inline char cellRepr(Cell c) {
-  switch (c) {
-  case Cell::EMPTY:
-    return '+';
-  case Cell::WHITES:
-    return 'W';
-  case Cell::BLACKS:
-    return 'B';
-  }
-}
-
 enum class Player : uint8_t { WHITES, BLACKS };
 
 enum class Failure : uint8_t {
@@ -254,6 +243,8 @@ private:
        const std::vector<Action> actions, const Board board, const Board mills,
        const Failure failure);
 
+  char cellRepr(size_t pos);
+
 public:
   Game();
 
@@ -369,11 +360,6 @@ Game Game::after(const Action action, const bool validate) const {
   }
 
   auto nextMills = Board({Cell::EMPTY});
-  for (const auto cell : nextMills) {
-    if (cell != Cell::EMPTY) {
-      std::cout << "WTF!" << std::endl;
-    }
-  }
   for (const auto line : LINES) {
     const auto a = static_cast<size_t>(line[0]),
                b = static_cast<size_t>(line[1]),
@@ -429,53 +415,53 @@ const std::string Game::toString() const {
   }
   res.pop_back();
   res += '\n';
-  res += cellRepr(board_[0]);
+  res += cellRepr(0];
   res += "-----";
-  res += cellRepr(board_[1]);
+  res += cellRepr(1];
   res += "-----";
-  res += cellRepr(board_[2]);
+  res += cellRepr(2];
   res += "\n| ";
-  res += cellRepr(board_[3]);
+  res += cellRepr(3];
   res += "---";
-  res += cellRepr(board_[4]);
+  res += cellRepr(4];
   res += "---";
-  res += cellRepr(board_[5]);
+  res += cellRepr(5];
   res += " |\n| | ";
-  res += cellRepr(board_[6]);
+  res += cellRepr(6];
   res += '-';
-  res += cellRepr(board_[7]);
+  res += cellRepr(7];
   res += '-';
-  res += cellRepr(board_[8]);
+  res += cellRepr(8];
   res += " | |\n";
-  res += cellRepr(board_[9]);
+  res += cellRepr(9];
   res += '-';
-  res += cellRepr(board_[10]);
+  res += cellRepr(10);
   res += '-';
-  res += cellRepr(board_[11]);
+  res += cellRepr(11);
   res += "   ";
-  res += cellRepr(board_[12]);
+  res += cellRepr(12);
   res += '-';
-  res += cellRepr(board_[13]);
+  res += cellRepr(13);
   res += '-';
-  res += cellRepr(board_[14]);
+  res += cellRepr(14);
   res += "\n| | ";
-  res += cellRepr(board_[15]);
+  res += cellRepr(15);
   res += '-';
-  res += cellRepr(board_[16]);
+  res += cellRepr(16);
   res += '-';
-  res += cellRepr(board_[17]);
+  res += cellRepr(17);
   res += " | |\n| ";
-  res += cellRepr(board_[18]);
+  res += cellRepr(18);
   res += "---";
-  res += cellRepr(board_[19]);
+  res += cellRepr(19);
   res += "---";
-  res += cellRepr(board_[20]);
+  res += cellRepr(20);
   res += " |\n";
-  res += cellRepr(board_[21]);
+  res += cellRepr(21);
   res += "-----";
-  res += cellRepr(board_[22]);
+  res += cellRepr(22);
   res += "-----";
-  res += cellRepr(board_[23]);
+  res += cellRepr(23);
   return res;
 }
 
@@ -634,4 +620,15 @@ int main() {
     Game().finishRandomly(true);
   }
   return 0;
+}
+
+char Game::cellRepr(size_t pos) {
+    switch (board_[pos]) {
+      case Cell::EMPTY:
+        return '+';
+      case Cell::WHITES:
+        return mills_[pos] == Cell::EMPTY ? 'w' : 'W';
+      case Cell::BLACKS:
+        return mills_[pos] == Cell::EMPTY ? 'b' : 'B';
+    }
 }
