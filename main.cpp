@@ -616,10 +616,12 @@ void Game::finishRandomly(bool log) const {
     const Action action = actions[rand() % actions.size()];
     const Game * tmp = game;
     game = new Game(game->after(action, false));
-    delete tmp;
+    if (tmp != this)
+      delete tmp;
     if (log)
       std::cout << game->toString() << std::endl;
   }
+  delete game;
 }
 
 bool Game::finished() const {
