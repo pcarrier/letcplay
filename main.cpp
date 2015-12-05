@@ -368,14 +368,16 @@ Game Game::after(const Action action, const bool validate) const {
     }
   }
 
-  auto nextMills = Board();
+  auto nextMills = Board({Cell::EMPTY});
   for (const auto line : LINES) {
     const auto a = static_cast<size_t>(line[0]),
                b = static_cast<size_t>(line[1]),
                c = static_cast<size_t>(line[2]);
     const auto cell = nextBoard[a];
     if (nextBoard[b] == cell && nextBoard[c] == cell) {
-      nextMills[a] = nextMills[b] = nextMills[c] = cell;
+      nextMills[a] = cell;
+      nextMills[b] = cell;
+      nextMills[c] = cell;
     }
   }
 
@@ -608,7 +610,7 @@ void Game::finishRandomly(bool log) const {
     const auto actions = game->possibleActions();
     const Action action = actions[rand() % actions.size()];
     const Game *tmp = game;
-    game = new Game(game->after(action, false));
+    game = new Game(game->after(action, true));
     if (tmp != this)
       delete tmp;
     if (log)
@@ -624,7 +626,7 @@ bool Game::finished() const {
 int main() {
   srand(time(NULL));
   for (auto i = 0; i < 1000; ++i) {
-    Game().finishRandomly(false);
+    Game().finishRandomly(true);
   }
   return 0;
 }
