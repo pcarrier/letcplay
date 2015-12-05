@@ -618,7 +618,7 @@ bool Game::finished() const {
 int main() {
   srand(time(NULL));
   for (auto i = 0; i < 1000; ++i) {
-    Game().finishRandomly(false;
+    Game().finishRandomly(false);
   }
   return 0;
 }
